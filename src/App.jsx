@@ -159,6 +159,9 @@ const VALID_RANGES = {
   ckMb:          { min: 0,    max: 500   },
   vitD:          { min: 4,    max: 150   },
   rbcMag:        { min: 3.5,  max: 9.0   },
+  pth:           { min: 1,    max: 300   },
+  phosphorus:    { min: 0.5,  max: 10    },
+  serumMag:      { min: 0.5,  max: 5.0   },
   b12:           { min: 100,  max: 2000  },
   folate:        { min: 1,    max: 60    },
   wbc:           { min: 1,    max: 30    },
@@ -502,6 +505,7 @@ function calcAll(f) {
     _mma: nv(f.mma), _myeloperox: nv(f.myeloperox),
    
     _vitD: nv(f.vitD), _rbcMag: nv(f.rbcMag), _b12: nv(f.b12), _folate: nv(f.folate),
+    _pth: nv(f.pth), _phosphorus: nv(f.phosphorus), _serumMag: nv(f.serumMag),
     _folateMisc: nv(f.folateMisc),
    
     _wbc: nv(f.wbc), _rbc: nv(f.rbc), _hemoglobin: nv(f.hemoglobin),
@@ -641,6 +645,9 @@ const RISK_BANDS = {
  
   vitD:          [[0, 19, "high"], [20, 29, "borderline"], [30, 80, "normal"], [81, Infinity, "borderline"]],
   rbcMag:        [[0, 4.19, "low"], [4.2, 6.8, "normal"], [6.81, Infinity, "high"]],
+  pth:           [[0, 19, "low"], [20, 55, "normal"], [56, 65, "borderline"], [66, Infinity, "high"]],
+  phosphorus:    [[0, 2.4, "low"], [2.5, 4.5, "normal"], [4.6, 5.5, "borderline"], [5.6, Infinity, "high"]],
+  serumMag:      [[0, 1.6, "low"], [1.7, 2.4, "normal"], [2.5, 3.0, "borderline"], [3.1, Infinity, "high"]],
   b12:           [[0, 199, "low"], [200, 299, "borderline"], [300, 900, "normal"], [901, Infinity, "borderline"]],
   folate:        [[0, 2.9, "low"], [3.0, 4.9, "borderline"], [5.0, 20.0, "normal"], [20.1, Infinity, "borderline"]],
  
@@ -756,6 +763,9 @@ const INTERP = {
  
   vitD:          v => v<20?"Deficient (<20) — supplement.":v<30?"Insufficient (20–29).":v<=80?"Optimal Vitamin D.":"High (>80) — evaluate toxicity.",
   rbcMag:        v => v>=4.2&&v<=6.8?"Normal RBC Magnesium.":v<4.2?"Low — intracellular deficiency. CV and IR risk.":"High — evaluate supplementation.",
+  pth:           v => v>=20&&v<=55?"Normal PTH (20–55 pg/mL). Calcium-PTH-Vitamin D axis in balance.":v<20?"Low PTH (<20) — evaluate hypoparathyroidism or hypercalcemia suppressing PTH.":v<=65?"Borderline elevated PTH (56–65) — may indicate early secondary hyperparathyroidism. Evaluate Vitamin D and calcium.":"Elevated PTH (>65 pg/mL) — evaluate primary or secondary hyperparathyroidism. Vitamin D deficiency is the most common secondary cause.",
+  phosphorus:    v => v>=2.5&&v<=4.5?"Normal phosphorus (2.5–4.5 mg/dL).":v<2.5?"Low phosphorus — evaluate malnutrition, resorption disorders, or hyperparathyroidism.":v<=5.5?"Borderline elevated phosphorus — evaluate renal function.":"Elevated phosphorus (>5.5) — evaluate renal insufficiency, hypoparathyroidism, or excess intake.",
+  serumMag:      v => v>=1.7&&v<=2.4?"Normal serum magnesium (1.7–2.4 mg/dL).":v<1.7?"Low serum magnesium — hypomagnesemia. Associated with cardiac arrhythmia, muscle cramps, insulin resistance. Note: RBC magnesium is more sensitive for intracellular stores.":"Elevated serum magnesium — evaluate renal function and supplementation.",
   b12:           v => v>=300&&v<=900?"Optimal B12.":v>=200?"Borderline (200–299) — consider supplementation.":"Low (<200) — deficiency. Evaluate absorption.",
   folate:        v => v>=5?"Normal folate.":v>=3?"Borderline (3–4.9) — may elevate homocysteine.":"Low (<3) — deficiency. Megaloblastic anemia risk.",
   folateMisc:    v => v >= 5 ? "Normal folate (≥5 ng/mL)." : v >= 3 ? "Borderline folate (3–4.9 ng/mL)." : "Low folate (<3 ng/mL) — deficiency.",
@@ -968,6 +978,10 @@ function buildRows(r) {
     { group: "Nutrients", key: "rbcMag",        label: "RBC Magnesium",                  val: r._rbcMag,       unit: "mg/dL", dec: 2, rkey: "rbcMag"         },
     { group: "Nutrients", key: "b12",           label: "Vitamin B12",                    val: r._b12,          unit: "pg/mL", dec: 0, rkey: "b12"            },
     { group: "Nutrients", key: "folate",        label: "Folate (Nutrients)",             val: r._folate,       unit: "ng/mL", dec: 1, rkey: "folate"         },
+    // Bone & Mineral
+    { group: "Bone",      key: "pth",           label: "PTH (Parathyroid Hormone)",      val: r._pth,          unit: "pg/mL", dec: 1, rkey: "pth"            },
+    { group: "Bone",      key: "phosphorus",    label: "Phosphorus",                     val: r._phosphorus,   unit: "mg/dL", dec: 1, rkey: "phosphorus"     },
+    { group: "Bone",      key: "serumMag",      label: "Serum Magnesium",                val: r._serumMag,     unit: "mg/dL", dec: 1, rkey: "serumMag"       },
     { group: "Nutrients", key: "folateMisc",    label: "Folate (Metabolic)",             val: r._folateMisc,   unit: "ng/mL", dec: 1, rkey: "folateMisc"     },
    
     { group: "CBC",       key: "wbc",           label: "WBC",                            val: r._wbc,          unit: "×10³/µL",dec:1, rkey: "wbc"            },
@@ -1186,25 +1200,28 @@ function Dashboard({ rows }) {
   const scoreLabel = counts.high > 2 ? "Elevated Risk" : counts.borderline > 2 ? "Mixed — Review" : "Favorable Profile";
 
  
-  // Dynamic radar: priority-ordered candidates, pick best available up to 8
-  // Organised into distinct clinical domains so the radar represents breadth, not redundancy
+  // Dynamic radar: 10 clinical domains, pick best available marker per domain
   const RADAR_PRIORITIES = [
-    // Atherogenic particle risk — prefer particle count over calculated LDL
-    { keys: ["ldlP", "apoB", "friedewald", "martinHopkins"], label: "LDL" },
-    // Lipid ratio / atherogenicity
-    { keys: ["apoBapoA", "tcHdl", "ldlHdl"], label: "Lipid Ratio" },
-    // Insulin resistance / metabolic
-    { keys: ["homaIR", "lpir", "tgHdl"], label: "Insulin Res." },
-    // Glycaemic status
-    { keys: ["a1c", "eag", "glucose"], label: "Glycemia" },
-    // Kidney function
-    { keys: ["egfr", "acr", "bunCr"], label: "Kidney" },
-    // Inflammation / oxidative stress
-    { keys: ["crp", "basicCrp", "homocysteine"], label: "Inflammation" },
-    // Thyroid — use TSH as primary, fall back to ratios
-    { keys: ["tsh", "fT3_rT3", "freeT3"], label: "Thyroid" },
-    // Liver / fibrosis
-    { keys: ["fib4", "ggt", "alt"], label: "Liver" },
+    // 1. Cardiovascular / Atherogenicity
+    { keys: ["ldlP", "apoB", "apoBapoA", "friedewald"], label: "🫀 Cardio" },
+    // 2. Neurological / Cognitive Risk
+    { keys: ["homocysteine", "mma", "b12"], label: "🧠 Neuro" },
+    // 3. Inflammation & Immune
+    { keys: ["crp", "basicCrp", "nlr"], label: "🔥 Inflam" },
+    // 4. Metabolic / Insulin Resistance
+    { keys: ["homaIR", "lpir", "tygIndex", "tgHdl"], label: "🍬 Metabolic" },
+    // 5. Liver / GI / Detox
+    { keys: ["fib4", "ggt", "astAltRatio", "alt"], label: "🫁 Liver" },
+    // 6. Thyroid
+    { keys: ["tsh", "fT3_rT3", "freeT3"], label: "🦋 Thyroid" },
+    // 7. Hormones
+    { keys: ["cortDheasRatio", "dheas", "testosterone"], label: "⚗️ Hormones" },
+    // 8. Bone / Mineral
+    { keys: ["pth", "vitD", "calcium", "phosphorus"], label: "🦴 Bone" },
+    // 9. Nutritional / Micronutrient
+    { keys: ["rbcMag", "folate", "b12", "mma"], label: "🧬 Nutrition" },
+    // 10. Oxidative Stress / Methylation
+    { keys: ["myeloperox", "uricAcid", "ldh"], label: "🧪 Oxidative" },
   ];
 
   // For each domain, pick the first key that has a computed row in results
@@ -1219,13 +1236,13 @@ function Dashboard({ rows }) {
       return null;
     })
     .filter(Boolean)
-    .slice(0, 8);
+    .slice(0, 10);
 
   const N = radarRows.length;
   const riskNum = { normal: 0, low: 0.25, borderline: 0.6, high: 1 };
   const riskBadgeColor = lvl => lvl === "high" ? COLORS.red : lvl === "borderline" || lvl === "low" ? COLORS.yellow : COLORS.green;
-  // Larger radar with more label clearance
-  const cx = 150, cy = 140, R = 95;
+  // Larger radar to accommodate 10 spokes with labels
+  const cx = 160, cy = 155, R = 100;
   const pts = radarRows.map((r, i) => {
     const angle = (i / N) * 2 * Math.PI - Math.PI / 2;
     const lvl = getRisk(r.rkey, r.val);
@@ -1233,7 +1250,7 @@ function Dashboard({ rows }) {
     const pr = 14 + frac * R;
     return {
       x: cx + pr * Math.cos(angle), y: cy + pr * Math.sin(angle),
-      lx: cx + (R + 32) * Math.cos(angle), ly: cy + (R + 32) * Math.sin(angle),
+      lx: cx + (R + 36) * Math.cos(angle), ly: cy + (R + 36) * Math.sin(angle),
       color: riskBadgeColor(lvl), label: r.radarLabel,
     };
   });
@@ -1274,11 +1291,11 @@ function Dashboard({ rows }) {
       {/* Radar — full width, centered */}
       {N >= 3 && (
         <div style={{ background: COLORS.card, borderRadius: 10, padding: "16px", marginBottom: 12, display: "flex", flexDirection: "column", alignItems: "center" }}>
-          <p style={{ color: COLORS.label, fontSize: 12, fontWeight: 600, margin: "0 0 2px" }}>Risk Domain Radar</p>
+          <p style={{ color: COLORS.label, fontSize: 12, fontWeight: 600, margin: "0 0 2px" }}>Risk Domain Radar — 10 Clinical Domains</p>
           <p style={{ color: COLORS.muted, fontSize: 10, margin: "0 0 10px", fontStyle: "italic", textAlign: "center" }}>
-            {N < 8 ? `${N} of 8 domains active — enter more values to expand` : "All 8 domains: best available marker per domain"}
+            {N < 10 ? `${N} of 10 domains active — enter more values to expand` : "All 10 domains active"}
           </p>
-          <svg width="300" height="280" viewBox="0 0 300 280" style={{ overflow: "visible", maxWidth: "100%" }}>
+          <svg width="320" height="310" viewBox="0 0 320 310" style={{ overflow: "visible", maxWidth: "100%" }}>
             {[0.33, 0.66, 1].map((fr, i) => (
               <path key={i} d={grid(fr)} fill="none" stroke={COLORS.border} strokeWidth="1"
                 strokeDasharray={i < 2 ? "4,3" : "none"} />
@@ -1294,7 +1311,7 @@ function Dashboard({ rows }) {
                 <text x={p.lx} y={p.ly}
                   textAnchor={p.lx < cx - 10 ? "end" : p.lx > cx + 10 ? "start" : "middle"}
                   dominantBaseline="middle"
-                  fill={COLORS.label} fontSize="10" fontFamily="'DM Mono', monospace" fontWeight="600"
+                  fill={COLORS.label} fontSize="9" fontFamily="'DM Mono', monospace" fontWeight="600"
                 >{p.label}</text>
               </g>
             ))}
@@ -1506,6 +1523,7 @@ export default function App() {
   const [freeT4, setFreeT4] = useState(""); const [reverseT3, setReverseT3] = useState("");
   const [tpoAb, setTpoAb] = useState(""); const [tgAb, setTgAb] = useState("");
   const [vitD, setVitD] = useState(""); const [rbcMag, setRbcMag] = useState("");
+  const [pth, setPth] = useState(""); const [phosphorus, setPhosphorus] = useState(""); const [serumMag, setSerumMag] = useState("");
   const [b12, setB12] = useState(""); const [folate, setFolate] = useState("");
   const [wbc, setWbc] = useState(""); const [rbc, setRbc] = useState("");
   const [hemoglobin, setHemoglobin] = useState(""); const [hematocrit, setHematocrit] = useState("");
@@ -1536,7 +1554,7 @@ export default function App() {
     alkPhos, tBili, directBili, ggt,
     cortisol, homocysteine, mma, folateMisc, ldh, uricAcid, ck, ckMb,
     tsh, freeT3, freeT4, reverseT3, tpoAb, tgAb,
-    vitD, rbcMag, b12, folate,
+    vitD, rbcMag, b12, folate, pth, phosphorus, serumMag,
     wbc, rbc, hemoglobin, hematocrit, mcv, mch, mchc, rdw,
     neutrophils, lymphocytes, monocytes, eosinophils, basophils,
     serumIron, tibc, uibc, transferrinSat, ferritin,
@@ -1570,6 +1588,7 @@ export default function App() {
         tsh: setTsh, freeT3: setFreeT3, freeT4: setFreeT4, reverseT3: setReverseT3,
         tpoAb: setTpoAb, tgAb: setTgAb,
         vitD: setVitD, rbcMag: setRbcMag, b12: setB12, folate: setFolate,
+        pth: setPth, phosphorus: setPhosphorus, serumMag: setSerumMag,
         wbc: setWbc, rbc: setRbc, hemoglobin: setHemoglobin, hematocrit: setHematocrit,
         mcv: setMcv, mch: setMch, mchc: setMchc, rdw: setRdw, platelets: setPlatelets,
         neutrophils: setNeutrophils, lymphocytes: setLymphocytes, monocytes: setMonocytes,
@@ -1618,7 +1637,7 @@ export default function App() {
      setFsh, setLh, setProlactin, setShbg, setIgf1,
      setAlkPhos, setTBili, setDirectBili, setGgt,
      setTsh, setFreeT3, setFreeT4, setReverseT3, setTpoAb, setTgAb,
-     setVitD, setRbcMag, setB12, setFolate,
+     setVitD, setRbcMag, setB12, setFolate, setPth, setPhosphorus, setSerumMag,
      setWbc, setRbc, setHemoglobin, setHematocrit, setMcv, setMch, setMchc, setRdw,
      setNeutrophils, setLymphocytes, setMonocytes, setEosinophils, setBasophils,
      setSerumIron, setTibc, setUibc, setTransferrinSat, setFerritin,
@@ -1836,12 +1855,14 @@ export default function App() {
           </div>
         </Section>
 
-        {/* Metabolic Markers & MISC — combined CMP + metabolic */}
+        {/* Metabolic Markers & MISC — organized sub-groups */}
         <Section title="Metabolic Markers & MISC" icon="📊">
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, alignItems: "end" }}>
+
+          {/* Kidney Function */}
+          <p style={{ color: COLORS.label, fontSize: 12, fontWeight: 700, margin: "0 0 8px", letterSpacing: "0.05em" }}>KIDNEY FUNCTION</p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, alignItems: "end", marginBottom: 20 }}>
             <InputField label="BUN" value={bun} onChange={setBun} unit="mg/dL" fieldKey="bun" />
             <InputField label="Creatinine" value={creatinine} onChange={setCreatinine} unit="mg/dL" fieldKey="creatinine" />
-            {/* eGFR is auto-calculated — show read-only display */}
             <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               <label style={{ color: COLORS.label, fontSize: 12, fontWeight: 600, letterSpacing: "0.04em", minHeight: "2.6em", display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
                 <span>eGFR <span style={{ color: COLORS.muted, fontWeight: 400 }}>(auto, mL/min)</span></span>
@@ -1850,18 +1871,33 @@ export default function App() {
                 <span style={{ color: COLORS.muted, fontSize: 13 }}>Auto from Age + Sex + Creatinine</span>
               </div>
             </div>
+          </div>
+
+          {/* Electrolytes */}
+          <p style={{ color: COLORS.label, fontSize: 12, fontWeight: 700, margin: "0 0 8px", letterSpacing: "0.05em" }}>ELECTROLYTES</p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, alignItems: "end", marginBottom: 20 }}>
             <InputField label="Sodium" value={sodium} onChange={setSodium} unit="mEq/L" fieldKey="sodium" />
             <InputField label="Potassium" value={potassium} onChange={setPotassium} unit="mEq/L" fieldKey="potassium" />
             <InputField label="Chloride" value={chloride} onChange={setChloride} unit="mEq/L" fieldKey="chloride" />
             <InputField label="Bicarbonate" value={bicarb} onChange={setBicarb} unit="mEq/L" fieldKey="bicarb" />
-            <InputField label="Calcium" value={calcium} onChange={setCalcium} unit="mg/dL" fieldKey="calcium" />
+            <div /><div />
+          </div>
+
+          {/* Protein Status */}
+          <p style={{ color: COLORS.label, fontSize: 12, fontWeight: 700, margin: "0 0 8px", letterSpacing: "0.05em" }}>PROTEIN STATUS</p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, alignItems: "end", marginBottom: 20 }}>
             <InputField label="Total Protein" value={totalProtein} onChange={setTotalProtein} unit="g/dL" fieldKey="totalProtein" />
             <InputField label="Albumin" value={albumin} onChange={setAlbumin} unit="g/dL" fieldKey="albumin" />
             <InputField label="Globulin" value={globulin} onChange={setGlobulin} unit="g/dL" fieldKey="globulin" />
+          </div>
+
+          {/* Glucose & Metabolic Health */}
+          <p style={{ color: COLORS.label, fontSize: 12, fontWeight: 700, margin: "0 0 8px", letterSpacing: "0.05em" }}>GLUCOSE & METABOLIC HEALTH</p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, alignItems: "end", marginBottom: 20 }}>
             <InputField label="Glucose" value={glucose} onChange={setGlucose} unit="mg/dL" fieldKey="glucose" />
             <InputField label="Fasting Insulin" value={insulin} onChange={setInsulin} unit="µIU/mL" fieldKey="insulin" />
             <InputField label="HbA1c" value={a1c} onChange={setA1c} unit="%" fieldKey="a1c" />
-            {/* EAG auto-calculated display */}
+            {/* eAG auto display */}
             <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               <label style={{ color: COLORS.label, fontSize: 12, fontWeight: 600, letterSpacing: "0.04em", minHeight: "2.6em", display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
                 <span>eAG <span style={{ color: COLORS.muted, fontWeight: 400 }}>(auto, mg/dL)</span></span>
@@ -1884,28 +1920,57 @@ export default function App() {
               </div>
               {nv(a1c) !== null && <span style={{ color: COLORS.muted, fontSize: 10, marginTop: 1 }}>From A1C: 28.7 × {nv(a1c).toFixed(1)} − 46.7</span>}
             </div>
+            <InputField label="Uric Acid" value={uricAcid} onChange={setUricAcid} unit="mg/dL" fieldKey="uricAcid" />
+            <div />
+          </div>
+
+          {/* Inflammation & Cardiovascular */}
+          <p style={{ color: COLORS.label, fontSize: 12, fontWeight: 700, margin: "0 0 8px", letterSpacing: "0.05em" }}>INFLAMMATION & CARDIOVASCULAR</p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, alignItems: "end", marginBottom: 20 }}>
             <InputField label="hs-CRP, Cardiac" value={crp} onChange={setCrp} unit="mg/L" fieldKey="crp" />
             <InputField label="CRP (standard)" value={basicCrp} onChange={setBasicCrp} unit="mg/L" fieldKey="basicCrp" />
-            <InputField label="Cortisol, Total" value={cortisol} onChange={setCortisol} unit="µg/dL" fieldKey="cortisol" />
             <InputField label="Homocysteine" value={homocysteine} onChange={setHomocysteine} unit="µmol/L" fieldKey="homocysteine" />
-            <InputField label="MMA (Methylmalonic Acid)" value={mma} onChange={setMma} unit="µmol/L" fieldKey="mma" />
+          </div>
+
+          {/* Vitamin & Methylation */}
+          <p style={{ color: COLORS.label, fontSize: 12, fontWeight: 700, margin: "0 0 8px", letterSpacing: "0.05em" }}>VITAMIN & METHYLATION</p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, alignItems: "end", marginBottom: 20 }}>
+            <InputField label="Vitamin B12" value={b12} onChange={setB12} unit="pg/mL" fieldKey="b12" />
             <InputField label="Folate" value={folateMisc} onChange={setFolateMisc} unit="ng/mL" fieldKey="folateMisc" />
+            <InputField label="MMA (Methylmalonic Acid)" value={mma} onChange={setMma} unit="µmol/L" fieldKey="mma" />
+          </div>
+
+          {/* Hormone / Stress */}
+          <p style={{ color: COLORS.label, fontSize: 12, fontWeight: 700, margin: "0 0 8px", letterSpacing: "0.05em" }}>HORMONE / STRESS</p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, alignItems: "end", marginBottom: 20 }}>
+            <InputField label="Cortisol, Total" value={cortisol} onChange={setCortisol} unit="µg/dL" fieldKey="cortisol" />
+            <div /><div />
+          </div>
+
+          {/* Cellular & Muscle Health */}
+          <p style={{ color: COLORS.label, fontSize: 12, fontWeight: 700, margin: "0 0 8px", letterSpacing: "0.05em" }}>CELLULAR & MUSCLE HEALTH</p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, alignItems: "end" }}>
             <InputField label="LDH" value={ldh} onChange={setLdh} unit="U/L" fieldKey="ldh" />
-            <InputField label="Uric Acid" value={uricAcid} onChange={setUricAcid} unit="mg/dL" fieldKey="uricAcid" />
             <InputField label="CK (Creatine Kinase)" value={ck} onChange={setCk} unit="U/L" fieldKey="ck" />
             <InputField label="CK-MB" value={ckMb} onChange={setCkMb} unit="U/L" fieldKey="ckMb" />
           </div>
+
         </Section>
 
-        {/* Nutrients */}
-        <Section title="Nutrients" icon="🌿">
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, alignItems: "end" }}>
+        {/* Bone & Mineral */}
+        <Section title="Bone & Mineral" icon="🦴">
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, alignItems: "end" }}>
+            <InputField label="PTH (Parathyroid Hormone)" value={pth} onChange={setPth} unit="pg/mL" fieldKey="pth" />
             <InputField label="Vitamin D (25-OH)" value={vitD} onChange={setVitD} unit="ng/mL" fieldKey="vitD" />
+            <InputField label="Calcium" value={calcium} onChange={setCalcium} unit="mg/dL" fieldKey="calcium" />
+            <InputField label="Phosphorus" value={phosphorus} onChange={setPhosphorus} unit="mg/dL" fieldKey="phosphorus" />
+            <InputField label="Serum Magnesium" value={serumMag} onChange={setSerumMag} unit="mg/dL" fieldKey="serumMag" />
             <InputField label="RBC Magnesium" value={rbcMag} onChange={setRbcMag} unit="mg/dL" fieldKey="rbcMag" />
-            <InputField label="Vitamin B12" value={b12} onChange={setB12} unit="pg/mL" fieldKey="b12" />
-            <InputField label="Folate" value={folate} onChange={setFolate} unit="ng/mL" fieldKey="folate" />
           </div>
+          <p style={{ color: COLORS.muted, fontSize: 11, margin: "10px 0 0" }}>PTH + Vitamin D + Calcium + Phosphorus interpreted together for full bone-mineral axis assessment.</p>
         </Section>
+
+        {/* Nutrients section removed — B12, Folate, MMA now in Metabolic Markers */}
 
         {/* Hematology */}
         <Section title="Hematology (CBC)" icon="🩸">
@@ -2099,11 +2164,11 @@ export default function App() {
             </div>
 
             {/* Flat result list grouped by section */}
-            {["Lipid", "Kidney", "Metabolic", "Nutrients", "CBC", "Hormone", "Thyroid", "Iron", "Liver", "ASCVD"].map(group => {
+            {["Lipid", "Kidney", "Metabolic", "Nutrients", "Bone", "CBC", "Hormone", "Thyroid", "Iron", "Liver", "ASCVD"].map(group => {
               const groupRows = visibleRows.filter(r => r.group === group);
               if (!groupRows.length) return null;
-              const icons =  { Lipid:"🧪", Kidney:"🏥", Metabolic:"📊", Nutrients:"🌿", CBC:"🩸", Hormone:"⚗️", Thyroid:"🦋", Iron:"⚙️", Liver:"🫁", ASCVD:"❤️" };
-              const titles = { Lipid:"Lipid Panel & Ratios", Kidney:"Kidney & CMP", Metabolic:"Metabolic & MISC", Nutrients:"Nutrients", CBC:"CBC & Differential", Hormone:"Hormones", Thyroid:"Thyroid Panel", Iron:"Iron Studies", Liver:"Liver Panel", ASCVD:"ASCVD Risk" };
+              const icons =  { Lipid:"🧪", Kidney:"🏥", Metabolic:"📊", Nutrients:"🌿", Bone:"🦴", CBC:"🩸", Hormone:"⚗️", Thyroid:"🦋", Iron:"⚙️", Liver:"🫁", ASCVD:"❤️" };
+              const titles = { Lipid:"Lipid Panel & Ratios", Kidney:"Kidney & CMP", Metabolic:"Metabolic & MISC", Nutrients:"Nutrients", Bone:"Bone & Mineral", CBC:"CBC & Differential", Hormone:"Hormones", Thyroid:"Thyroid Panel", Iron:"Iron Studies", Liver:"Liver Panel", ASCVD:"ASCVD Risk" };
               return (
                 <Section key={group} title={titles[group]} icon={icons[group]}>
                   {groupRows.map(row => (
