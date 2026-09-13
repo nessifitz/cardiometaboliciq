@@ -1193,6 +1193,7 @@ function CheckField({ label, checked, onChange }) {
 ═══════════════════════════════════════════════════════════ */
 function Dashboard({ rows }) {
   if (rows.length < 2) return null;
+  const [barExpanded, setBarExpanded] = useState(false);
 
   const counts = { normal: 0, borderline: 0, high: 0, low: 0 };
   rows.forEach(r => { const lvl = getRisk(r.rkey, r.val); if (lvl) counts[lvl]++; });
@@ -1321,8 +1322,22 @@ function Dashboard({ rows }) {
 
       {/* Bar chart — full width below radar */}
       <div style={{ background: COLORS.card, borderRadius: 10, padding: "16px" }}>
-        <p style={{ color: COLORS.label, fontSize: 12, fontWeight: 600, margin: "0 0 12px" }}>All Markers — Risk Level</p>
-        <div style={{ overflowY: "auto", maxHeight: 220 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <p style={{ color: COLORS.label, fontSize: 12, fontWeight: 600, margin: 0 }}>
+            All Markers — Risk Level <span style={{ color: COLORS.muted, fontWeight: 400 }}>({rows.length})</span>
+          </p>
+          <button
+            onClick={() => setBarExpanded(e => !e)}
+            style={{
+              background: "none", border: `1px solid ${COLORS.border}`, borderRadius: 6,
+              color: COLORS.muted, fontSize: 11, padding: "3px 10px", cursor: "pointer",
+              fontFamily: "'DM Mono', monospace", display: "flex", alignItems: "center", gap: 4,
+            }}
+          >
+            {barExpanded ? "▲ Collapse" : "▼ Expand all"}
+          </button>
+        </div>
+        <div style={{ overflowY: barExpanded ? "visible" : "auto", maxHeight: barExpanded ? "none" : 220 }}>
           {rows.map(row => {
             const lvl = getRisk(row.rkey, row.val);
             const barColor = lvl === "high" ? COLORS.red : lvl === "borderline" || lvl === "low" ? COLORS.yellow : COLORS.green;
@@ -1345,6 +1360,19 @@ function Dashboard({ rows }) {
             );
           })}
         </div>
+        {!barExpanded && rows.length > 10 && (
+          <button
+            onClick={() => setBarExpanded(true)}
+            style={{
+              width: "100%", marginTop: 10, background: "none",
+              border: `1px solid ${COLORS.border}`, borderRadius: 6,
+              color: COLORS.muted, fontSize: 11, padding: "6px", cursor: "pointer",
+              fontFamily: "'DM Mono', monospace",
+            }}
+          >
+            ▼ Show all {rows.length} markers
+          </button>
+        )}
       </div>
     </div>
   );
